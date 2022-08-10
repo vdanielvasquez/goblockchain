@@ -9,7 +9,11 @@ import (
 	"time"
 )
 
-const MINING_DIFFICULTY = 3
+const (
+	MINING_DIFFICULTY = 3
+	MINING_SENDER     = "THE BLOCKCHAIN"
+	MINING_REWARD     = 1.0
+)
 
 type Block struct {
 	timestamp    int64
@@ -56,13 +60,15 @@ func (b *Block) MarshalJSON() ([]byte, error) {
 }
 
 type Blockchain struct {
-	transactionPool []*Transaction
-	chain           []*Block
+	transactionPool   []*Transaction
+	chain             []*Block
+	blockchainAddress string
 }
 
-func NewBlockchain() *Blockchain {
+func NewBlockchain(blockchainAddress string) *Blockchain {
 	b := &Block{}
 	bc := new(Blockchain)
+	bc.blockchainAddress = blockchainAddress
 	bc.CreateBlock(0, b.Hash())
 	return bc
 }
@@ -113,6 +119,33 @@ func (bc *Blockchain) ProofOfWork() int {
 	return nonce
 }
 
+func (bc *Blockchain) Mining() bool {
+	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD)
+	nonce := bc.ProofOfWork()
+	previousHash := bc.LastBlock().Hash()
+	bc.CreateBlock(nonce, previousHash)
+	log.Println("action=mining, status=success")
+	return true
+}
+
+func (bc *Blockchain) CalculateTotalAmount(blockchainAddress string) float32 {
+	var totalAmount float32 = 0.0
+	for _, b := range bc.chain {
+		for _, t := range b.transactions {
+			value := t.value
+			if blockchainAddress == t.recipientBlockchainAddress {
+				totalAmount += value
+			}
+
+			if blockchainAddress == t.senderBlockchainAddress {
+				totalAmount -= value
+			}
+		}
+	}
+
+	return totalAmount
+}
+
 func (bc *Blockchain) Print() {
 	fmt.Println("\n<<Blockchain>>")
 	for i, block := range bc.chain {
@@ -135,9 +168,9 @@ func NewTransaction(sender string, recipient string, value float32) *Transaction
 
 func (t *Transaction) Print() {
 	fmt.Printf("%s\n", strings.Repeat("-", 40))
-	fmt.Printf(" senderBlockchainAddress   %s\n", t.senderBlockchainAddress)
-	fmt.Printf(" recipientBlockchainAddress   %s\n", t.recipientBlockchainAddress)
-	fmt.Printf(" value   %.1f\n", t.value)
+	fmt.Printf(" senderBlockchainAddress   		%s\n", t.senderBlockchainAddress)
+	fmt.Printf(" recipientBlockchainAddress   	%s\n", t.recipientBlockchainAddress)
+	fmt.Printf(" value   						%.1f\n", t.value)
 }
 
 // MarshalJSON Required to parse the struct in JSON: first capital letter
@@ -160,21 +193,27 @@ func init() {
 func main() {
 	//block := &Block{nonce: 1}
 	//fmt.Printf("---->%x\n", block.Hash())
-
-	blockChain := NewBlockchain()
+	myBlockchainAddress := "192.168.12.1"
+	blockChain := NewBlockchain(myBlockchainAddress)
 	blockChain.Print()
 
-	blockChain.AddTransaction("Sandra", "John", 1.0)
-	previousHash := blockChain.LastBlock().Hash()
-	nonce := blockChain.ProofOfWork()
-	blockChain.CreateBlock(nonce, previousHash)
+	blockChain.AddTransaction("A", "B", 1.0)
+	blockChain.Mining()
 	blockChain.Print()
 
-	blockChain.AddTransaction("John", "Sandra", 1.5)
+	blockChain.AddTransaction("Sandra", "John", 2.0)
+	blockChain.Mining()
+	blockChain.Print()
+
+	blockChain.AddTransaction("John", "Sandra", 2.5)
 	blockChain.AddTransaction("Sandra", "Peter", 0.5)
-	previousHash = blockChain.LastBlock().Hash() //updates last one
-	nonce = blockChain.ProofOfWork()
-	blockChain.CreateBlock(nonce, previousHash)
+	blockChain.Mining()
 	blockChain.Print()
 
+	fmt.Printf("my 		%.1f\n", blockChain.CalculateTotalAmount(myBlockchainAddress))
+	fmt.Printf("A 		%.1f\n", blockChain.CalculateTotalAmount("A"))
+	fmt.Printf("B 		%.1f\n", blockChain.CalculateTotalAmount("B"))
+	fmt.Printf("Sandra	%.1f\n", blockChain.CalculateTotalAmount("Sandra"))
+	fmt.Printf("John 	%.1f\n", blockChain.CalculateTotalAmount("John"))
+	fmt.Printf("Peter	%.1f\n", blockChain.CalculateTotalAmount("Peter"))
 }
