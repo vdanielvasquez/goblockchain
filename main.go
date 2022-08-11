@@ -11,16 +11,10 @@ func init() {
 	log.SetPrefix("Blockchain: ")
 }
 
-func main() {
+func GenerateBlockchainTransactions() {
 	/*block := &block2.Block{}
 	fmt.Printf("%x\n", block.Hash())
 	*/
-
-	w := wallet.NewWallet()
-	fmt.Println(w.PrivateKeyStr())
-	fmt.Println(w.PublicKeyStr())
-	fmt.Println(w.BlockchainAddress())
-
 	myBlockchainAddress := "192.168.1.2"
 	blockChain := block.NewBlockchain(myBlockchainAddress)
 	blockChain.Print()
@@ -44,4 +38,14 @@ func main() {
 	fmt.Printf("Sandra	%.1f\n", blockChain.CalculateTotalAmount("Sandra"))
 	fmt.Printf("John 	%.1f\n", blockChain.CalculateTotalAmount("John"))
 	fmt.Printf("Peter	%.1f\n", blockChain.CalculateTotalAmount("Peter"))
+}
+
+func main() {
+	w := wallet.NewWallet()
+	fmt.Println(w.PrivateKeyStr())
+	fmt.Println(w.PublicKeyStr())
+	fmt.Println(w.BlockchainAddress())
+
+	t := wallet.NewTransaction(w.PrivateKey(), w.PublicKey(), w.BlockchainAddress(), "B", 1.0)
+	fmt.Printf("signature %s \n", t.GenerateSignature())
 }
