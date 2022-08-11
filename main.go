@@ -19,6 +19,7 @@ func main() {
 	w := wallet.NewWallet()
 	fmt.Println(w.PrivateKeyStr())
 	fmt.Println(w.PublicKeyStr())
+	fmt.Println(w.BlockchainAddress())
 
 	myBlockchainAddress := "192.168.1.2"
 	blockChain := block.NewBlockchain(myBlockchainAddress)
