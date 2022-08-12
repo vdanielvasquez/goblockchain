@@ -8,6 +8,7 @@ import (
 func init() {
 	log.SetPrefix("Blockchain: ")
 }
+
 func main() {
 	port := flag.Uint("port", 5001, "TCP Port Number for Blockchain Server")
 	flag.Parse()
