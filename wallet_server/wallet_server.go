@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GoBlockchain/utils"
 	"GoBlockchain/wallet"
 	"html/template"
 	"io"
@@ -35,7 +36,7 @@ func (ws *WalletServer) Index(w http.ResponseWriter, req *http.Request) {
 		t, _ := template.ParseFiles(path.Join(tempDir, "index.html"))
 		t.Execute(w, "")
 	default:
-		log.Printf("ERROR: Invalid HTTP Method")
+		log.Printf("ERROR-INDEX: Invalid HTTP Method")
 	}
 }
 
@@ -48,7 +49,20 @@ func (ws *WalletServer) Wallet(w http.ResponseWriter, req *http.Request) {
 		io.WriteString(w, string(m[:]))
 	default:
 		w.WriteHeader(http.StatusBadRequest)
-		log.Println("ERROR: Invalid HTTP Method")
+		log.Println("ERROR-WALLET: Invalid HTTP Method")
+	}
+}
+
+func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case http.MethodPost:
+		//w.Header().Add("Content-Type", "application/json")
+
+		io.WriteString(w, string(utils.JsonStatus("success")))
+
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("ERROR-TRANSACTION: Invalid HTTP Method")
 	}
 }
 
@@ -58,5 +72,6 @@ func (ws *WalletServer) Run() {
 
 	http.HandleFunc("/", ws.Index)
 	http.HandleFunc("/wallet", ws.Wallet)
+	http.HandleFunc("/transaction", ws.CreateTransaction)
 	log.Fatal(http.ListenAndServe("0.0.0.0:"+port, nil))
 }
