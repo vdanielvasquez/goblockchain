@@ -3,6 +3,8 @@ package main
 import (
 	"GoBlockchain/utils"
 	"GoBlockchain/wallet"
+	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -56,9 +58,36 @@ func (ws *WalletServer) Wallet(w http.ResponseWriter, req *http.Request) {
 func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodPost:
-		//w.Header().Add("Content-Type", "application/json")
+		decoder := json.NewDecoder(req.Body)
+		var t wallet.TransactionRequest
+		err := decoder.Decode(&t)
 
-		io.WriteString(w, string(utils.JsonStatus("success")))
+		if err != nil {
+			log.Printf("ERROR-TRANSACTION: %v", err)
+			io.WriteString(w, string(utils.JsonStatus("fail, not able to decode")))
+			return
+		}
+		if !t.Validate() {
+			log.Printf("ERROR-TRANSACTION: missing field(s)")
+			io.WriteString(w, string(utils.JsonStatus("fail missing fields")))
+			return
+		}
+
+		publicKey := utils.PublicKeyFromString(*t.SenderPublicKey)
+		privateKey := utils.PrivateKeyFromString(*t.SenderPrivateKey, publicKey)
+		value, err := strconv.ParseFloat(*t.Value, 32)
+		if err != nil {
+			log.Println("ERROR-TRANSACTION: Cannot parse value")
+			io.WriteString(w, string(utils.JsonStatus("fail, not able to parse value")))
+			return
+		}
+		value32 := float32(value)
+
+		fmt.Println(publicKey)
+		fmt.Println(privateKey)
+		fmt.Printf("%.1f\n", value32)
+
+		//w.Header().Add("Content-Type", "application/json")
 
 	default:
 		w.WriteHeader(http.StatusBadRequest)
